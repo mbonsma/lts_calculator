@@ -5,7 +5,19 @@ So far, this has only been implemented for the City of Toronto, and there are ha
 variables (in particular, file, dataset, and column names) that will need to be adjusted
 for using with other cities.
 
-## LTS tables – Toronto analysis
+## Usage
+
+To calculate LTS for the City of Toronto, run these scripts:
+1. `create_network.py` - aligns input data to the centreline network to create a harmonized geospatial file.
+2. `assign_lts.py` - use the [LTS decision tree](#lts-tables) to calculate LTS for the network created in step 1.
+3. `plot_lts.py` - plot LTS values on a map.
+
+## Data sources
+
+Data used for this calculation can be found 
+[here](https://www.dropbox.com/scl/fo/4pfpaidgaigfwjl0snjhu/AAEeGMeQcgA-VkGO-gROZCg?rlkey=jqajojqqtlad0yo59srpaeulr&st=orj5ri6f&dl=0).
+
+## LTS tables
 
 These tables summarize the LTS criteria we use for calculating LTS based on city data.
 They are based on [Furth et al. 2016](https://doi.org/10.3141/2587-06) with some modifications to make thresholds 
