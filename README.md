@@ -1,20 +1,9 @@
 # Calculate LTS from city data
 
-
-
 This repo contains code and notes for calculating Level of Traffic Stress with city data.
-
 So far, this has only been implemented for the City of Toronto, and there are hard-coded
-
 variables (in particular, file, dataset, and column names) that will need to be adjusted
-
 for using with other cities.
-
-
-
-
-
-
 
 ## LTS tables – Toronto analysis
 
@@ -43,8 +32,8 @@ more clear. These changes are described in footnotes.
 |Any | speed > 56[^2] |	4
 
 
-[^1] Note: in Furth et al. 2016, this value is 30 mph (48 km/h), which we have rounded to 50 km/h to match typical Canadian speed limits.
-[^2] Note: in Furth et al. 2016, LTS 3 is 35 mph (56 km/h), but LTS 4 is listed as “40 mph or more” (64 km/h). It is ambiguous whether the line between LTS 3 and LTS 4 should be 35 or 40 mph.
+[^1]: in Furth et al. 2016, this value is 30 mph (48 km/h), which we have rounded to 50 km/h to match typical Canadian speed limits.
+[^2]: in Furth et al. 2016, LTS 3 is 35 mph (56 km/h), but LTS 4 is listed as “40 mph or more” (64 km/h). It is ambiguous whether the line between LTS 3 and LTS 4 should be 35 or 40 mph.
 
 #### Mixed traffic:
 
@@ -58,8 +47,8 @@ more clear. These changes are described in footnotes.
 |Any	| speed > 50 |	Any |	4 |
 | > 5|	Any |	Any |	4 |
 
-[^3]Note: in Furth the lane values are 2, 4, 6, etc. but here we choose (3, 5) to be the midpoint since the cutoffs are ambiguous.
-[^4]Based on City of Toronto road classifications, I consider the road classes “Local”, “Pending”, “Other”, and “Access Road” to meet this ADT threshold. Local roads should have an ADT <= 2500. 
+[^3]: in Furth the lane values are 2, 4, 6, etc. but here we choose (3, 5) to be the midpoint since the cutoffs are ambiguous.
+[^4]: Based on City of Toronto road classifications, I consider the road classes “Local”, “Pending”, “Other”, and “Access Road” to meet this ADT threshold. Local roads should have an ADT <= 2500. 
 
 
 
