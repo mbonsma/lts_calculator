@@ -10,7 +10,7 @@ for using with other cities.
 To calculate LTS for the City of Toronto, run these scripts:
 1. `create_network.py` - aligns input data to the centreline network to create a harmonized geospatial file.
 2. `assign_lts.py` - use the [LTS decision tree](#lts-tables) to calculate LTS for the network created in step 1.
-3. `plot_lts.py` - plot LTS values on a map.
+3. `compare_2025_lts.py` - plot LTS values on a map, calculate accessibility, compare results of updating network by hand from Bo's 2021 network and regenerating LTS from scratch programmatically.
 
 ## Data sources
 
