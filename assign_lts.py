@@ -34,7 +34,7 @@ rule_message_dict = {'s1':'This way is a separated path because it has the centr
 
                      'b1':'LTS is 1 because there is parking present, the speed is less than or equal to 40 and there are 2 lanes or less.',
                      'b2':'Increasing LTS to 2 because the speed is between 41-50 km/h, there are 2 lanes or less, and parking present.',  
-                     'b3':'Increasing LTS to 3 because the speed is between 51-56 km/h and parking present.',  
+                     'b3':'Increasing LTS to 3 because the speed is between 51-56 km/h or lanes > 2 and parking present.',  
                      'b4':'Increasing LTS to 4 because speed is > 56 km/h.',
                      'b5':'Not assigning LTS yet because speed or lanes info is missing.',
                   
@@ -93,7 +93,9 @@ from utils.lts_functions import is_separated, bike_lane_with_parking, bike_lane_
 
 # ## Set options
 
-use_max_speed = False # if true, use the max of speed limit and GTAModel speeds. If False, use GTAModel speeds where available.
+# if true, use the highest GTAmodel speed. If False, use mean GTAModel speed. If "AM", use AM GTAModel speed (what Bo did, this is the version sent to city).
+#use_max_speed = False 
+use_max_speed = "AM"
 
 # ## Load data
 
@@ -101,9 +103,7 @@ centreline = read_dataframe("data/centreline_network_with_attributes_2025-02.geo
 
 centreline['feature_code_desc'].value_counts()
 
-centreline[centreline['centreline_id'] == 30023164].plot(column = 'Final_Spee', alpha = 0.5)
-
-centreline['centreline_id'].value_counts()
+assert np.all(centreline['centreline_id'].value_counts() == 1)
 
 # ## Generate network
 
@@ -122,21 +122,30 @@ np.max(np.sum(lts[['GTASpeed_1', 'GTASpeed_2', 'GTASPeed_3']] > 0, axis = 1))
 (lts[['GTASpeed_2']] > 0).sum()
 
 # +
-lts['gta_speed'] = np.nanmax(lts[['GTASpeed_1', 'GTASpeed_2', 'GTASPeed_3']], axis = 1)
-lts['gta_speed'] = lts['gta_speed'].replace(0, np.nan) # replace 0 gta speed with NaN
-lts['final_speed'] = lts['gta_speed']
+# try average of 3 daytime GTAModel speeds
+lts['gta_mean_speed'] = np.nanmean(lts[['speed_am', 'speed_md', 'speed_pm']], axis = 1)
+lts['gta_mean_speed'] = lts['gta_mean_speed'].replace(0, np.nan) # replace 0 gta speed with NaN
+# try max of 3 daytime GTAModel speeds
+lts['gta_max_speed'] = np.nanmax(lts[['speed_am', 'speed_md', 'speed_pm']], axis = 1)
+lts['gta_max_speed'] = lts['gta_max_speed'].replace(0, np.nan) # replace 0 gta speed with NaN
+
+lts['final_speed'] = lts['gta_mean_speed']
 lts['final_speed'] = lts['final_speed'].fillna(lts['speed_limit'])
-lts['final_speed_max'] = np.nanmax(lts[['speed_limit', 'gta_speed']], axis = 1)
+#lts['final_speed_max'] = np.nanmax(lts[['speed_limit', 'gta_mean_speed']], axis = 1)
+lts['final_speed_max'] = lts['gta_max_speed']
+lts['final_speed_max'] = lts['final_speed_max'].fillna(lts['speed_limit'])
 
 if use_max_speed == True:
     lts['speed_assumed'] = lts['final_speed_max']
-else:
+elif use_max_speed == False:
     lts['speed_assumed'] = lts['final_speed']
+elif use_max_speed == "AM": # Use AM GTAModel speed, historically what the group has done
+    lts['speed_assumed'] = lts['speed_am'].replace(0, np.nan).fillna(lts['speed_limit'])
 # -
 
 # there are some cases where the speed limit has been lowered since 2021
 lts[(lts['Final_Spee'] > lts['speed_limit'])
-     & (lts['gta_speed'].isna())][['linear_name_full', 'speed_limit', 'gta_speed', 'Final_Spee', 'final_speed']]
+     & (lts['gta_mean_speed'].isna())][['linear_name_full', 'speed_limit', 'gta_mean_speed', 'Final_Spee', 'final_speed']]
 
 # use city lane info
 lts['lanes_assumed'] = lts['number_of_lanes_city']
@@ -201,18 +210,18 @@ lts['lts'].value_counts()
 
 # ### Assign any missing by road class
 
-lts[lts['lts'].isna()][['linear_name_full', 'number_of_lanes_city', 'speed_limit', 'final_speed', 'gta_speed', 'Final_Spee', 'feature_code_desc']]
+lts[lts['lts'].isna()][['linear_name_full', 'number_of_lanes_city', 
+                        'speed_limit', 'final_speed', 'gta_mean_speed', 'gta_max_speed', 
+                        'Final_Spee', 'feature_code_desc']].head(120).tail(20)
 
 # +
 # assign LTS 1 to 'other' by inspection
 
 lts.loc[(lts['lts'].isna())
-    & (lts['feature_code_desc'].isin(['Other', 'Laneway'])), 'rule'] = 'o1'
+    & (lts['feature_code_desc'].isin(['Other', 'Laneway', 'Local'])), 'rule'] = 'o1'
 
 lts.loc[(lts['lts'].isna())
-    & (lts['feature_code_desc'].isin(['Other', 'Laneway'])), 'lts'] = 1
-
-
+    & (lts['feature_code_desc'].isin(['Other', 'Laneway',  'Local'])), 'lts'] = 1
 # -
 
 # Attempt to assign remainder based on neighbouring segments
@@ -249,7 +258,14 @@ keep_columns = ['centreline_id', 'linear_name_full',
        'feature_code', 'feature_code_desc',  'speed_limit',
        'number_of_lanes_city', 'INFRA_HIGH', 'INFRA_LOWO',
        'with_parki', 'GTASpeed_1', 'GTASpeed_2', 'GTASPeed_3', 'Final_Spee',
-       'geometry', 'lts', 'gta_speed', 'final_speed', 'final_speed_max', 'speed_assumed', 'lanes_assumed', 'rule', 'message']
+       'number_of_lanes_gtamodel',          'speed_am',
+       'speed_md', 'speed_pm',
+       'geometry', 'lts', 'gta_mean_speed', 'gta_max_speed',
+        'final_speed', 'final_speed_max', 'speed_assumed', 'lanes_assumed', 'rule', 'message']
+
+# assign lts 1 to King's college - now pedestrian-only
+lts.loc[lts['linear_name_full'].str.lower().str.contains("king's college"), 'lts'] = 1
+lts.loc[lts['linear_name_full'].str.lower().str.contains("king's college"), 'rule'] = 'm1' # mostly pedestrian-only
 
 date="2025-02"
 lts[keep_columns].drop_duplicates().to_file("data/lts_{}_maxspeed_{}.geojson".format(date, 
@@ -271,5 +287,20 @@ lts['final_speed'].isna().sum()
 
 # only trails etc. should have missing speeds
 lts[lts['final_speed'].isna()]['feature_code_desc'].value_counts()
+
+# king's college should not be LTS 4, but it's getting matched to the wrong thing. 
+lts[lts['linear_name_full'].str.lower().str.contains("king's college")][['linear_name_full', 'speed_limit', 'number_of_lanes_city',
+                                                                 'gta_max_speed', 'speed_assumed', 'lanes_assumed', 'lts', 'rule']] 
+
+# st george is maybe getting the wrong number of lanes for some segments?
+# city data does in fact have 4 lanes there - nothing we can do about that. 
+lts[lts['linear_name_full'].str.lower().str.contains("st george st")][['linear_name_full', 'speed_limit', 'number_of_lanes_city',
+                                                                 'gta_max_speed', 'speed_assumed', 'lanes_assumed', 'lts', 'rule']] 
+#
+#
+
+# Eglinton between Bayview and Laird is 2 lanes in the city data, and with low GTAModel speeds is coming up low-stress
+lts[lts['linear_name_full'].str.contains('Eglinton')].cx[6.3e5:6.32e5,4.841e6:4.844e6][['linear_name_full', 'speed_limit', 'number_of_lanes_city',
+                                                                 'gta_max_speed', 'speed_assumed', 'lanes_assumed', 'lts', 'rule']] 
 
 
