@@ -26,7 +26,7 @@
 # | Centreline network | [Toronto Open Data](https://open.toronto.ca/dataset/toronto-centreline-tcl/) | No | File is updated gradually over time, download at desired time point |
 # | Cycling network file | Received from City | Yes | This script uses a version aligned with the centreline network |
 # | Speed limit | [Government of Ontario](https://geohub.lio.gov.on.ca/datasets/mnrf::ontario-road-network-orn-road-net-element/about)  | No | Speed from GTAModel is used where available |
-# | Number of lanes | Received from City | No | Provided privately by Charmalee |
+# | Number of lanes | Received from City | No | Provided privately |
 # | GTAModel speed and volume | GTAModel contacts (via Bo, 2021), James Vaughan (2026) | Yes | We have Bo's 2021 matched version and the raw data from James. Both use 2016 modeled speed and volume, since this is the most accurately calibrated network |
 # | Street parking | Toronto Parking Authority (via Bo) | Unknown | This info is in the 2021 LTS file shared by Bo until updated |
 # | Previous LTS version(s) | Bo | NA | Optional, used for testing and comparison |
@@ -36,7 +36,7 @@
 
 # downloaded from Open Data, Feb 24, 2025
 centreline_filename = "data/Centreline_Version2-4326/Centreline - Version 2 - 4326.shp" 
-# received from Katie Wittmann, City of Toronto
+# received from City of Toronto
 cycling_network_filename = "data/Existing_Cycling_Network_20250805/Existing_Cycling_Network_20250805.shp" 
 speed_limit_filename = "data/ORNELEM/LIO-2025-10-03/ORN_SPEED_LIMIT.csv"
 lanes_filename = "data/ORNELEM/LIO-2025-10-03/ORN_NUMBER_OF_LANES.csv" # wildly inaccurate!
@@ -93,11 +93,15 @@ shape_orig = centreline.shape[0]
 # - [x] match to centreline network
 # - [x] compare with speed data from Bo
 #
-# NOTE: the @lkspd column is the **free-flow** speed, not the congested speed. To calculate the congested speed, use the travel time column ('TIMAU'), the number of minutes for a vehicle to traverse the link, and the 'LENGTH' column. LENGTH is ''the length of the link in KMs. This does not have to be the same as the shape length.''
+# NOTE: the @lkspd column is the **free-flow** speed, not the congested speed. 
+# To calculate the congested speed, use the travel time column ('TIMAU'), the number of minutes for a vehicle to 
+# traverse the link, and the 'LENGTH' column. LENGTH is ''the length of the link in KMs. This does not have to be 
+# the same as the shape length.''
 #
 # Info from [documentation](https://tmg.utoronto.ca/doc/1.6/gtamodel/user_guide/Outputs/shapefile.html) and consultation with James Vaughan.
 #
-# From Bo, on the GTAModel_1 _2 _3 columns in his 2021 network: "my gut feeling is that I need to map the GTA speed from one shapefile to the toronto road network shapefile. I tried different complementary strategies targeting different road segments. I think I used the AM speed when it’s available and speed limit when it's not. The discrepancy may be because the matching was not done very well. I think I tried something called “spatial matching” (an ArcGIS function) and the three gta speeds are basically three complementary tries. And then I checked many road segments manually and correct things if they didn't look right."
+# GTAModel_1 _2 _3 columns in Bo's 2021 network were created using the ArcGIS "spatial matching" and represent different complementary approaches to 
+# matching the GTAModel and centreline network. Bo used the AM speed. Bo also checked many road segments manually and corrected things if they didn't look right.
 
 # @lkspd is the vehicle speed column
 gtamodel_am = read_dataframe(gtamodel_speed_am)
@@ -1187,7 +1191,6 @@ assert centreline.shape[0] == shape_orig
 # In July 2021 file from Bo:
 # - Final speed: Average motor traffic speed during morning rush hour. The GTA model provides estimates only for major arterials; missing values are filled with the posted speed limit at the time. Some entries remain missing, mostly for walkways or multi-use pathways where LTS can be determined without vehicle speed. 
 # - With_parking: Equals 1 if on-street parking exists on either side of the road segment, and 0 otherwise.
-# - Bo doesn't remember what BL_width and BL_speed represent. I think they are some intermediate values that I calculated to do the LTS assessment, not raw data.
 
 lts_2021_base = read_dataframe(lts_2021_filename)
 
