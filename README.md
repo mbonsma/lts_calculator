@@ -14,8 +14,17 @@ To calculate LTS for the City of Toronto, run these scripts:
 
 ## Data sources
 
-Data used for this calculation can be found 
-[here](https://www.dropbox.com/scl/fo/4pfpaidgaigfwjl0snjhu/AAEeGMeQcgA-VkGO-gROZCg?rlkey=jqajojqqtlad0yo59srpaeulr&st=orj5ri6f&dl=0).
+Most data used in this calculation is publicly available government datasets; some was provided privately. Data sources and links are described in the following table.
+
+| Data | Source | Time point retroactivity | Notes|
+| --- | --- | --- | --- |
+| Centreline network | [Toronto Open Data](https://open.toronto.ca/dataset/toronto-centreline-tcl/) | No | File is updated gradually over time, download at desired time point |
+| Cycling network file | Received from City | Yes | This script uses a version aligned with the centreline network, but the cycling network is also publicly available on [Toronto Open Data](https://open.toronto.ca/dataset/cycling-network/) |
+| Speed limit | [Government of Ontario](https://geohub.lio.gov.on.ca/datasets/mnrf::ontario-road-network-orn-road-net-element/about)  | No | Speed from GTAModel is used where available |
+| Number of lanes | Received from City | No | Provided privately |
+| GTAModel speed and volume | GTAModel contacts (via Bo, 2021), James Vaughan (2026) | Yes | We have Bo's 2021 matched version and the raw data from James. Both use 2016 modeled speed and volume, since this is the most accurately calibrated network |
+| Street parking | Toronto Parking Authority (via Bo) | Unknown | This info is in the 2021 LTS file shared by Bo until updated |
+| Previous LTS version(s) | Bo | NA | Optional, used for testing and comparison |
 
 ## LTS tables
 
