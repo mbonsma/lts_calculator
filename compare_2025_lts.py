@@ -33,8 +33,8 @@ import shapely, json, matplotlib
 
 from utils.functions import lts_colour
 
-use_maxspeed = False
-#use_maxspeed = "AM"
+#use_maxspeed = False
+use_maxspeed = "AM"
 lts_recalc = read_dataframe("data/lts_2025-02_maxspeed_{}.geojson".format(use_maxspeed))
 lts_2025 = read_dataframe("data/jan2025_lts.geojson")
 
@@ -95,11 +95,8 @@ low_to_high = lts_2025[(lts_2025['lts_updated'].isin([1,2]))
 high_to_low = lts_2025[(lts_2025['lts_updated'].isin([3,4])) 
           & (lts_2025['lts_new'].isin([1,2]))]
 
-# 234 km previously labeled low stress are now high stress.
 
 low_to_high.length.sum() / 1000
-
-# 92 km previously labeled high stress are now low stress.
 
 high_to_low.length.sum() / 1000
 
@@ -305,9 +302,6 @@ G = create_simplified_graph_from_network(network, weights)
 # ## Traffic signals
 #
 # - These aren't aligned to the centreline network, so just do spatial matching to node
-# - Remove any installed 2024 or later
-# - Check if any are upgraded / changed
-# - Dataset includes LPI activation date separate from activation date. Could also include this in network?
 #
 # Steps:
 # - get nodes from centreline network
@@ -762,6 +756,8 @@ toronto_das = da_boundaries[da_boundaries['DAUID'].isin(toronto_das)].to_crs(utm
 toronto_das.shape
 
 # don't use bridge nodes as the DA centroid nodes
+# perhaps also could exlude high-stress nodes from being DA centroids, since
+# this would automatically give a DA 0 accessibility
 exclude_nodes = list(bridge_nodes['node_id'])
 nodes_df_da = nodes_df[~nodes_df['node_id'].isin(exclude_nodes)]
 
@@ -774,6 +770,9 @@ toronto_das['node_id'] = node_id
 toronto_das['node_id'] = toronto_das['node_id'].astype('int')
 
 toronto_das.head()
+
+# ~600 DAs have a high-stress centroid node after this process
+nodes_df[nodes_df['node_id'].isin(toronto_das['node_id'])]['intersection_lts_new'].value_counts()
 
 # These are mostly the same as Bo's DAs, but some are different - could be because of changing DA boundaries / labels / changing node labels in updated centreline and/or updated DA boundaries for 2021.
 
@@ -884,7 +883,10 @@ destinations = list(toronto_das['node_id'])
 
 np.sum(~od_pairs_df.isna())
 
-# There are 2.4 million OD pairs connected within 30 minutes travel time. Bo's args_adj_ratio has 1.1 million pairs
+# There are 2.4 million OD pairs connected within 30 minutes travel time. 
+# Bo's args_adj_ratio has 1.1 million pairs, but he removed OD pairs that 
+# were never connected under any of his sampled network designs because
+# these would not see any accessibility change in the model.
 
 from utils.functions import load_file
 
@@ -905,7 +907,7 @@ od_pairs_Bo_df_orig = pd.DataFrame.from_dict(args_orig['destinations'], orient =
 np.sum(~od_pairs_Bo_df_orig.isna())
 
 
-# 1.3 million connected pairs, but Bo only has 3054 DAs instead of the full 3700. There was some removal process, can't remember what exactly. 
+# 1.3 million connected pairs, but Bo only has 3054 DAs instead of the full 3700. 
 
 # ### Calculate accessibility
 
